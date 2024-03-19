@@ -59,31 +59,6 @@ GAME_UUID = "157ae45b-263b-414a-8976-6d2ad210a7e8"
 DONATION_UUID = "179019d3-83dd-4619-b7d9-579786659204"
 ```
 
-
-
-## 运行
-
-打开浏览器，打开你想监听的抖音直播间，然后将直播间网址黏贴到config.py的LIVE_ROOM_URL中，然后运行main.py程序即可看到效果。
-注意：如果要获取排名，需要将时间间隔设置大一点，否则抓取频繁会获取不到数据：打包房间人数失败
-
-```shell
-python main.py
-```
-
-
-## 直播流地址
-
-直播流地址可以使用在线播放工具测试是否可以正常播放直播内容  
-西瓜播放器(支持flv直播流)：https://h5player.bytedance.com/generate/  
-m3u8在线播放器(播放m3u8流)：http://tool.pfan.cn/m3u8/  
-![](https://img-blog.csdnimg.cn/1ee41000b7294de587bf35c446f94024.png)
-![](https://img-blog.csdnimg.cn/8df84d0b24334d3db563c1014e731dab.png)
-
-## TODO BUG
-
-有的直播有可能获取不到m3u8的链接，待研究：https://live.douyin.com/3652616706  
-flv直播流地址区分标清|高清|蓝光地址，需要都获取到
-
 ## 运行效果
 ```shell
 2024-03-08 12:22:30,371 - DEBUG - https://live.douyin.com:443 "GET /352577626339 HTTP/1.1" 200 None
