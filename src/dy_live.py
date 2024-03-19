@@ -5,7 +5,8 @@ import json
 import os
 import signal
 import sys
-
+from src.voice import play_sound
+import asyncio
 from config import LIVE_GIFT_LIST
 from src.utils.logger import logger
 import re
@@ -13,7 +14,7 @@ import time
 import requests
 import websocket
 from src.utils.ws_send import ws_send, ws_sender
-from src import live_rank
+from src import live_rank, voice
 from src.utils.common import GlobalVal
 from protobuf_inspector.types import StandardParser
 from google.protobuf import json_format
@@ -55,55 +56,55 @@ def onMessage(ws: websocket.WebSocketApp, message: bytes):
         sendAck(ws, logId, payloadPackage.internalExt)
     for msg in payloadPackage.messagesList:
         # 反对分数消息
-        if msg.method == 'WebcastMatchAgainstScoreMessage':
-            unPackMatchAgainstScoreMessage(msg.payload)
-            continue
-
-        # 点赞数
-        if msg.method == 'WebcastLikeMessage':
-            unPackWebcastLikeMessage(msg.payload)
-            continue
-
-        # 成员进入直播间消息
-        if msg.method == 'WebcastMemberMessage':
-            unPackWebcastMemberMessage(msg.payload)
-            continue
-
-        # 礼物消息
-        if msg.method == 'WebcastGiftMessage':
-            unPackWebcastGiftMessage(msg.payload)
-            continue
+        # if msg.method == 'WebcastMatchAgainstScoreMessage':
+        #     unPackMatchAgainstScoreMessage(msg.payload)
+        #     continue
+        #
+        # # 点赞数
+        # if msg.method == 'WebcastLikeMessage':
+        #     unPackWebcastLikeMessage(msg.payload)
+        #     continue
+        #
+        # # 成员进入直播间消息
+        # if msg.method == 'WebcastMemberMessage':
+        #     unPackWebcastMemberMessage(msg.payload)
+        #     continue
+        #
+        # # 礼物消息
+        # if msg.method == 'WebcastGiftMessage':
+        #     unPackWebcastGiftMessage(msg.payload)
+        #     continue
 
         # 聊天消息
         if msg.method == 'WebcastChatMessage':
             unPackWebcastChatMessage(msg.payload)
             continue
 
-        # 联谊会消息
-        if msg.method == 'WebcastSocialMessage':
-            unPackWebcastSocialMessage(msg.payload)
-            continue
-
-        # 房间用户发送消息
-        if msg.method == 'WebcastRoomUserSeqMessage':
-            unPackWebcastRoomUserSeqMessage(msg.payload)
-            continue
-
-        # 更新粉丝票
-        if msg.method == 'WebcastUpdateFanTicketMessage':
-            unPackWebcastUpdateFanTicketMessage(msg.payload)
-            continue
-
-        # 公共文本消息
-        if msg.method == 'WebcastCommonTextMessage':
-            unPackWebcastCommonTextMessage(msg.payload)
-            continue
-
-        # 商品改变消息
-        if msg.method == 'WebcastProductChangeMessage':
-            WebcastProductChangeMessage(msg.payload)
-            continue
-        logger.info('[onMessage] [待解析方法' + msg.method + '等待解析～] [房间Id：' + liveRoomId + ']')
+        # # 联谊会消息
+        # if msg.method == 'WebcastSocialMessage':
+        #     unPackWebcastSocialMessage(msg.payload)
+        #     continue
+        #
+        # # 房间用户发送消息
+        # if msg.method == 'WebcastRoomUserSeqMessage':
+        #     unPackWebcastRoomUserSeqMessage(msg.payload)
+        #     continue
+        #
+        # # 更新粉丝票
+        # if msg.method == 'WebcastUpdateFanTicketMessage':
+        #     unPackWebcastUpdateFanTicketMessage(msg.payload)
+        #     continue
+        #
+        # # 公共文本消息
+        # if msg.method == 'WebcastCommonTextMessage':
+        #     unPackWebcastCommonTextMessage(msg.payload)
+        #     continue
+        #
+        # # 商品改变消息
+        # if msg.method == 'WebcastProductChangeMessage':
+        #     WebcastProductChangeMessage(msg.payload)
+        #     continue
+        # logger.info('[onMessage] [待解析方法' + msg.method + '等待解析～] [房间Id：' + liveRoomId + ']')
 
 
 def unPackWebcastCommonTextMessage(data):
@@ -159,7 +160,46 @@ def unPackWebcastChatMessage(data):
     log = json.dumps(data, ensure_ascii=False)
     logger.info(
         f'[unPackWebcastChatMessage] [直播间弹幕消息{GlobalVal.commit_num}] [房间Id：' + liveRoomId + '] | ' + log)
+    # 普通消息
+
+
+def unPackWebcastChatMessage(data):
+    GlobalVal.commit_num += 1
+    chatMessage = ChatMessage()
+    chatMessage.ParseFromString(data)
+    data = json_format.MessageToDict(chatMessage, preserving_proto_field_name=True)
+    log = json.dumps(data, ensure_ascii=False)
+    logger.info(
+        f'[unPackWebcastChatMessage] [直播间弹幕消息{GlobalVal.commit_num}] [房间Id：' + liveRoomId + '] | ' + log)
+
+    parsed_json = json.loads(log)
+
+    content = parsed_json["content"]
+
+    nickName = parsed_json["user"]["nickName"]
+
+    try:
+        bty_url = "https://ai-api.betteryeah.com/v1/public_api/webhook/ab702f8ef6914fe394bc333fed48319c/execute_flow?Access-Key=NjUwMmNlZjAzNjI1MjQyNzY5ZmExYjU2LDEwMDAsMTY5OTQxMjI3NDAxMw==&Workspace-Id=6502cef03625242769fa1b56"
+        response = requests.post(bty_url, json={"message": content})
+        response.raise_for_status()  # 如果响应状态不是200，引发异常
+        json_response = response.json()
+        run_result = json_response["data"]["run_result"]
+    except Exception as err:
+        logger.error(f'An error occurred: {err}')
+        return
+
+    audio_txt = f"{content}\n{run_result}"
+    asyncio.run(test(audio_txt))
     return data
+
+
+async def test(audio_txt):
+    try:
+        tts = voice.TTSSpeakReaction(audio_txt=audio_txt, block=True)
+        path = await tts.areact()
+        play_sound(path)
+    except:
+        pass
 
 
 # 礼物消息

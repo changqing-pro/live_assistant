@@ -4,3 +4,4 @@ bin/*
 venv
 log.txt
 *.pyc
+*.mp3
