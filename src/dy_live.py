@@ -160,17 +160,6 @@ def unPackWebcastChatMessage(data):
     log = json.dumps(data, ensure_ascii=False)
     logger.info(
         f'[unPackWebcastChatMessage] [直播间弹幕消息{GlobalVal.commit_num}] [房间Id：' + liveRoomId + '] | ' + log)
-    # 普通消息
-
-
-def unPackWebcastChatMessage(data):
-    GlobalVal.commit_num += 1
-    chatMessage = ChatMessage()
-    chatMessage.ParseFromString(data)
-    data = json_format.MessageToDict(chatMessage, preserving_proto_field_name=True)
-    log = json.dumps(data, ensure_ascii=False)
-    logger.info(
-        f'[unPackWebcastChatMessage] [直播间弹幕消息{GlobalVal.commit_num}] [房间Id：' + liveRoomId + '] | ' + log)
 
     parsed_json = json.loads(log)
 
